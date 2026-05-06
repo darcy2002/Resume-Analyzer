@@ -1,12 +1,16 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import type { ParsedResume } from "@/types";
+import AnalysisStream from "./AnalysisStream";
 
 interface AnalysisViewProps {
   resume: ParsedResume;
   jd: string;
   onReset: () => void;
+  onEditResume: () => void;
+  onCoverLetter: () => void;
 }
 
 function PulsingDot() {
@@ -55,7 +59,19 @@ function PanelHeader({ label, showDot }: { label: string; showDot?: boolean }) {
   );
 }
 
-export default function AnalysisView({ resume, jd, onReset }: AnalysisViewProps) {
+export default function AnalysisView({
+  resume,
+  jd,
+  onReset,
+  onEditResume,
+  onCoverLetter,
+}: AnalysisViewProps) {
+  const [matchScore, setMatchScore] = useState<number | null>(null);
+
+  const handleScoreReady = useCallback((score: number) => {
+    setMatchScore(score);
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -114,18 +130,34 @@ export default function AnalysisView({ resume, jd, onReset }: AnalysisViewProps)
 
         {/* Center: status */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <PulsingDot />
-          <span
-            style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
-              fontSize: 11,
-              letterSpacing: "0.15em",
-              color: "var(--muted)",
-              textTransform: "uppercase",
-            }}
-          >
-            Analyzing...
-          </span>
+          {matchScore === null ? (
+            <>
+              <PulsingDot />
+              <span
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontSize: 11,
+                  letterSpacing: "0.15em",
+                  color: "var(--muted)",
+                  textTransform: "uppercase",
+                }}
+              >
+                Analyzing...
+              </span>
+            </>
+          ) : (
+            <span
+              style={{
+                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontSize: 11,
+                letterSpacing: "0.15em",
+                color: "var(--accent)",
+                textTransform: "uppercase",
+              }}
+            >
+              Complete
+            </span>
+          )}
         </div>
 
         {/* Right: score + reset */}
@@ -136,11 +168,12 @@ export default function AnalysisView({ resume, jd, onReset }: AnalysisViewProps)
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontSize: 22,
                 fontWeight: 700,
-                color: "var(--muted)",
+                color: matchScore !== null ? "var(--accent)" : "var(--muted)",
                 lineHeight: 1,
+                transition: "color 300ms ease",
               }}
             >
-              —
+              {matchScore !== null ? matchScore : "—"}
             </span>
             <span
               style={{
@@ -182,7 +215,7 @@ export default function AnalysisView({ resume, jd, onReset }: AnalysisViewProps)
         </div>
       </div>
 
-      {/* 3-column grid — gap IS the divider via background on wrapper */}
+      {/* 3-column grid */}
       <div
         style={{
           flex: 1,
@@ -353,76 +386,29 @@ export default function AnalysisView({ resume, jd, onReset }: AnalysisViewProps)
           </p>
         </motion.div>
 
-        {/* Right panel: analysis */}
+        {/* Right panel: analysis stream */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.35 }}
           style={{
             background: "var(--bg)",
-            padding: 24,
             height: "calc(100vh - 56px)",
-            overflowY: "auto",
+            overflow: "hidden",
             display: "flex",
             flexDirection: "column",
           }}
         >
-          <PanelHeader label="Analysis" showDot />
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-            }}
-          >
-            <motion.div
-              animate={{ opacity: [0.4, 1, 0.4] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
-              <div style={{ display: "flex", gap: 4 }}>
-                {[0, 1, 2].map((i) => (
-                  <motion.span
-                    key={i}
-                    animate={{ scaleY: [1, 2.2, 1] }}
-                    transition={{
-                      duration: 0.9,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: i * 0.15,
-                    }}
-                    style={{
-                      display: "inline-block",
-                      width: 3,
-                      height: 14,
-                      borderRadius: 2,
-                      background: "var(--accent)",
-                      transformOrigin: "center",
-                    }}
-                  />
-                ))}
-              </div>
-              <span
-                style={{
-                  fontFamily: "var(--font-jetbrains-mono), monospace",
-                  fontSize: 11,
-                  color: "var(--muted)",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Running analysis…
-              </span>
-            </motion.div>
+          <div style={{ padding: "24px 24px 0", flexShrink: 0 }}>
+            <PanelHeader label="Analysis" showDot={matchScore === null} />
           </div>
+          <AnalysisStream
+            resume={resume}
+            jd={jd}
+            onScoreReady={handleScoreReady}
+            onGenerateResume={onEditResume}
+            onCoverLetter={onCoverLetter}
+          />
         </motion.div>
       </div>
     </motion.div>

@@ -25,6 +25,9 @@ export default function Home() {
     setJd("");
   }, []);
 
+  const handleEditResume = useCallback(() => setPhase("editing"), []);
+  const handleCoverLetter = useCallback(() => setPhase("coverLetter"), []);
+
   return (
     <AnimatePresence mode="wait">
       {phase === "intake" || !resume ? (
@@ -35,6 +38,8 @@ export default function Home() {
           resume={resume}
           jd={jd}
           onReset={handleReset}
+          onEditResume={handleEditResume}
+          onCoverLetter={handleCoverLetter}
         />
       )}
     </AnimatePresence>
