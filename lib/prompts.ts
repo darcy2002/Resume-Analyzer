@@ -112,8 +112,10 @@ Return JSON:
 {
   "greeting": "Dear [Hiring Manager Name],",
   "body": ["paragraph 1", "paragraph 2", "paragraph 3 (optional)"],
-  "closing": "Best regards,\\n[Candidate Name]"
-}`;
+  "closing": "Best regards,\\nDevanshi Garg"
+}
+
+CRITICAL: In the closing field, use the candidate's ACTUAL name from the resume. Never use a placeholder like "[Candidate Name]" — substitute the real name.`;
 }
 
 function formatResumeForAnalysis(resume: ParsedResume): string {

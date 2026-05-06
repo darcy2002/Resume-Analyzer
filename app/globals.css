@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:wght@400&display=swap");
 
 :root {
   /* Backgrounds */
@@ -49,7 +48,7 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-inter), sans-serif;
   font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -59,11 +58,11 @@ body {
 
 /* Utility classes */
 .mono {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
 }
 
 .serif {
-  font-family: "Instrument Serif", serif;
+  font-family: var(--font-instrument-serif), serif;
 }
 
 .panel {
@@ -113,7 +112,7 @@ body::after {
 
 /* Keyboard shortcut hint */
 .kbd {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), monospace;
   font-size: 11px;
   padding: 2px 6px;
   background: var(--surface);
