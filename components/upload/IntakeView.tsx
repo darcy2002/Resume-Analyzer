@@ -18,7 +18,13 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
   const [jd, setJd] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const canAnalyze = parsedResume !== null && jd.trim().length > 50;
+  const jdTrimmedLength = jd.trim().length;
+  const canAnalyze = parsedResume !== null && jdTrimmedLength >= 50;
+  const disabledHint = !parsedResume
+    ? "Upload your resume to continue"
+    : jdTrimmedLength < 50
+    ? `Add more detail to the job description (min 50 characters) — ${jdTrimmedLength}/50`
+    : null;
   const isDragging = uploadState === "dragging";
   const isUploading = uploadState === "uploading";
   const isDone = uploadState === "done";
@@ -511,6 +517,20 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
               >
                 Analyze resume
               </button>
+
+              {disabledHint && (
+                <p
+                  style={{
+                    fontFamily: "var(--font-inter), sans-serif",
+                    fontSize: 12,
+                    color: "var(--muted)",
+                    textAlign: "center",
+                    margin: "0 0 12px",
+                  }}
+                >
+                  {disabledHint}
+                </p>
+              )}
 
               {/* Privacy note */}
               <div
