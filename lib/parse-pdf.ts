@@ -1,7 +1,8 @@
 export async function parsePdf(buffer: Buffer): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdf = require("pdf-parse");
-  const data = await pdf(buffer);
+  const { PDFParse } = require("pdf-parse");
+  const parser = new PDFParse({ data: buffer });
+  const data = await parser.getText();
   return data.text
     .split("\n")
     .map((line: string) => line.trim())
