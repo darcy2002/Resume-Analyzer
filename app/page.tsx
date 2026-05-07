@@ -1,79 +1,20 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import IntakeView from "@/components/upload/IntakeView";
 import AnalysisView from "@/components/analysis/AnalysisView";
-import type { ParsedResume } from "@/types";
+import ResumeEditor from "@/components/editor/ResumeEditor";
+import CoverLetterEditor from "@/components/editor/CoverLetterEditor";
+import type { ParsedResume, Analysis } from "@/types";
 
 type Phase = "intake" | "analyzing" | "editing" | "coverLetter";
-
-function ComingSoon({ title, onBack }: { title: string; onBack: () => void }) {
-  return (
-    <motion.div
-      key={title}
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -16 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      style={{
-        width: "100%",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 20,
-        padding: 24,
-        boxSizing: "border-box",
-      }}
-    >
-      <p
-        style={{
-          fontFamily: "var(--font-inter), sans-serif",
-          fontWeight: 700,
-          fontSize: 28,
-          letterSpacing: "-0.5px",
-          color: "var(--text)",
-          margin: 0,
-        }}
-      >
-        {title}
-      </p>
-      <p
-        style={{
-          fontFamily: "var(--font-inter), sans-serif",
-          fontSize: 15,
-          color: "var(--muted)",
-          margin: 0,
-        }}
-      >
-        Coming soon.
-      </p>
-      <button
-        onClick={onBack}
-        style={{
-          background: "none",
-          border: "1px solid var(--border-strong)",
-          borderRadius: 6,
-          padding: "8px 20px",
-          fontFamily: "var(--font-jetbrains-mono), monospace",
-          fontSize: 12,
-          color: "var(--muted)",
-          cursor: "pointer",
-          letterSpacing: "0.04em",
-        }}
-      >
-        ← Back to analysis
-      </button>
-    </motion.div>
-  );
-}
 
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("intake");
   const [resume, setResume] = useState<ParsedResume | null>(null);
   const [jd, setJd] = useState<string>("");
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
 
   const handleAnalyze = useCallback((parsed: ParsedResume, jobDesc: string) => {
     setResume(parsed);
@@ -85,26 +26,39 @@ export default function Home() {
     setPhase("intake");
     setResume(null);
     setJd("");
+    setAnalysis(null);
   }, []);
 
-  const handleEditResume = useCallback(() => setPhase("editing"), []);
+  const handleEditResume = useCallback((a: Analysis) => {
+    setAnalysis(a);
+    setPhase("editing");
+  }, []);
+
   const handleCoverLetter = useCallback(() => setPhase("coverLetter"), []);
   const handleBackToAnalysis = useCallback(() => setPhase("analyzing"), []);
+
+  const handleEditorDone = useCallback((acceptedResume: ParsedResume) => {
+    setResume(acceptedResume);
+    setPhase("coverLetter");
+  }, []);
 
   return (
     <AnimatePresence mode="wait">
       {phase === "intake" || !resume ? (
         <IntakeView key="intake" onAnalyze={handleAnalyze} />
-      ) : phase === "editing" ? (
-        <ComingSoon
+      ) : phase === "editing" && analysis ? (
+        <ResumeEditor
           key="editing"
-          title="Generate improved resume"
+          resume={resume}
+          analysis={analysis}
           onBack={handleBackToAnalysis}
+          onDone={handleEditorDone}
         />
       ) : phase === "coverLetter" ? (
-        <ComingSoon
+        <CoverLetterEditor
           key="coverLetter"
-          title="Write cover letter"
+          resume={resume}
+          jd={jd}
           onBack={handleBackToAnalysis}
         />
       ) : (

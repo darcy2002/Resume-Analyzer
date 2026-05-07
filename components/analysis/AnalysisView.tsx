@@ -2,14 +2,14 @@
 
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import type { ParsedResume } from "@/types";
+import type { ParsedResume, Analysis } from "@/types";
 import AnalysisStream from "./AnalysisStream";
 
 interface AnalysisViewProps {
   resume: ParsedResume;
   jd: string;
   onReset: () => void;
-  onEditResume: () => void;
+  onEditResume: (analysis: Analysis) => void;
   onCoverLetter: () => void;
 }
 
@@ -406,7 +406,7 @@ export default function AnalysisView({
             resume={resume}
             jd={jd}
             onScoreReady={handleScoreReady}
-            onGenerateResume={onEditResume}
+            onGenerateResume={(a) => onEditResume(a)}
             onCoverLetter={onCoverLetter}
           />
         </motion.div>

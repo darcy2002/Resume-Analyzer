@@ -10,7 +10,7 @@ interface AnalysisStreamProps {
   resume: ParsedResume;
   jd: string;
   onScoreReady: (score: number) => void;
-  onGenerateResume: () => void;
+  onGenerateResume: (analysis: Analysis) => void;
   onCoverLetter: () => void;
 }
 
@@ -577,7 +577,7 @@ export default function AnalysisStream({
         }}
       >
         <button
-          onClick={onGenerateResume}
+          onClick={() => partial && onGenerateResume(partial as Analysis)}
           style={{
             width: "100%",
             background: "var(--accent)",
