@@ -47,7 +47,10 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable}`}
     >
-      <body className="min-h-screen flex flex-col">{children}</body>
+      <body className="min-h-screen flex flex-col">
+        <div className="dot-grid-bg" aria-hidden="true" />
+        {children}
+      </body>
     </html>
   );
 }
