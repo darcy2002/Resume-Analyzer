@@ -49,7 +49,7 @@ export const AnalysisSchema: z.ZodType<Analysis> = z.object({
   bulletRewrites: z.array(BulletRewriteSchema),
   strengths: z.array(z.string().min(1)),
   concerns: z.array(z.string().min(1)),
-  recommendedTitle: z.string().optional(),
+  recommendedTitle: z.string().nullable().optional().transform((v) => v ?? undefined),
 });
 
 export const CoverLetterSchema: z.ZodType<CoverLetter> = z.object({
