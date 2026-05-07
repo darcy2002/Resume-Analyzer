@@ -110,6 +110,17 @@ body::after {
   color: var(--accent);
 }
 
+/* Hide custom cursor on touch devices */
+@media (hover: none) {
+  body { cursor: auto; }
+  .cursor, .cursor-ring { display: none !important; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* Keyboard shortcut hint */
 .kbd {
   font-family: var(--font-jetbrains-mono), monospace;

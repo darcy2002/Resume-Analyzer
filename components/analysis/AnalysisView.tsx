@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import type { ParsedResume, Analysis } from "@/types";
 import AnalysisStream from "./AnalysisStream";
@@ -30,17 +30,21 @@ function PulsingDot() {
   );
 }
 
-function PanelHeader({ label, showDot }: { label: string; showDot?: boolean }) {
+function PanelHeader({ label, showDot, sticky }: { label: string; showDot?: boolean; sticky?: boolean }) {
   return (
     <div
       style={{
         display: "flex",
         alignItems: "center",
         gap: 8,
-        paddingBottom: 16,
+        paddingBottom: sticky ? 12 : 16,
+        paddingTop: sticky ? 12 : 0,
+        paddingLeft: sticky ? 24 : 0,
+        paddingRight: sticky ? 24 : 0,
         borderBottom: "1px solid var(--border)",
-        marginBottom: 20,
+        marginBottom: sticky ? 0 : 20,
         flexShrink: 0,
+        ...(sticky ? { position: "sticky", top: 0, background: "var(--bg)", zIndex: 2 } : {}),
       }}
     >
       <span
@@ -67,6 +71,15 @@ export default function AnalysisView({
   onCoverLetter,
 }: AnalysisViewProps) {
   const [matchScore, setMatchScore] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   const handleScoreReady = useCallback((score: number) => {
     setMatchScore(score);
@@ -128,37 +141,39 @@ export default function AnalysisView({
           </div>
         </div>
 
-        {/* Center: status */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {matchScore === null ? (
-            <>
-              <PulsingDot />
+        {/* Center: status (hidden on mobile) */}
+        {!isMobile && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {matchScore === null ? (
+              <>
+                <PulsingDot />
+                <span
+                  style={{
+                    fontFamily: "var(--font-jetbrains-mono), monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.15em",
+                    color: "var(--muted)",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Analyzing...
+                </span>
+              </>
+            ) : (
               <span
                 style={{
                   fontFamily: "var(--font-jetbrains-mono), monospace",
                   fontSize: 11,
                   letterSpacing: "0.15em",
-                  color: "var(--muted)",
+                  color: "var(--accent)",
                   textTransform: "uppercase",
                 }}
               >
-                Analyzing...
+                Complete
               </span>
-            </>
-          ) : (
-            <span
-              style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
-                fontSize: 11,
-                letterSpacing: "0.15em",
-                color: "var(--accent)",
-                textTransform: "uppercase",
-              }}
-            >
-              Complete
-            </span>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Right: score + reset */}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -215,33 +230,34 @@ export default function AnalysisView({
         </div>
       </div>
 
-      {/* 3-column grid */}
+      {/* 3-column grid (single column on mobile) */}
       <div
         style={{
           flex: 1,
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr",
           gap: 1,
           background: "var(--border)",
-          overflow: "hidden",
+          overflow: isMobile ? "auto" : "hidden",
         }}
       >
         {/* Left panel: resume */}
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
+          initial={{ opacity: 0, x: isMobile ? 0 : -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.55, ease: "easeOut", delay: 0.1 }}
           style={{
             background: "var(--bg)",
-            padding: 24,
-            height: "calc(100vh - 56px)",
+            padding: isMobile ? 0 : 24,
+            height: isMobile ? "auto" : "calc(100vh - 56px)",
+            maxHeight: isMobile ? "50vh" : undefined,
             overflowY: "auto",
             display: "flex",
             flexDirection: "column",
           }}
         >
-          <PanelHeader label="Your Resume" />
-          <div style={{ flex: 1 }}>
+          <PanelHeader label="Your Resume" sticky={isMobile} />
+          <div style={{ flex: 1, padding: isMobile ? "0 24px 24px" : 0 }}>
             <p
               style={{
                 fontFamily: "var(--font-inter), sans-serif",
@@ -364,14 +380,15 @@ export default function AnalysisView({
           transition={{ duration: 0.55, ease: "easeOut", delay: 0.2 }}
           style={{
             background: "var(--bg)",
-            padding: 24,
-            height: "calc(100vh - 56px)",
+            padding: isMobile ? 0 : 24,
+            height: isMobile ? "auto" : "calc(100vh - 56px)",
+            maxHeight: isMobile ? "50vh" : undefined,
             overflowY: "auto",
             display: "flex",
             flexDirection: "column",
           }}
         >
-          <PanelHeader label="Job Description" />
+          <PanelHeader label="Job Description" sticky={isMobile} />
           <p
             style={{
               fontFamily: "var(--font-inter), sans-serif",
@@ -380,6 +397,7 @@ export default function AnalysisView({
               lineHeight: 1.7,
               margin: 0,
               whiteSpace: "pre-wrap",
+              padding: isMobile ? "16px 24px 24px" : 0,
             }}
           >
             {jd}
@@ -388,19 +406,20 @@ export default function AnalysisView({
 
         {/* Right panel: analysis stream */}
         <motion.div
-          initial={{ opacity: 0, x: 20 }}
+          initial={{ opacity: 0, x: isMobile ? 0 : 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.35 }}
           style={{
             background: "var(--bg)",
-            height: "calc(100vh - 56px)",
-            overflow: "hidden",
+            height: isMobile ? "auto" : "calc(100vh - 56px)",
+            maxHeight: isMobile ? "none" : undefined,
+            overflow: isMobile ? "visible" : "hidden",
             display: "flex",
             flexDirection: "column",
           }}
         >
           <div style={{ padding: "24px 24px 0", flexShrink: 0 }}>
-            <PanelHeader label="Analysis" showDot={matchScore === null} />
+            <PanelHeader label="Analysis" showDot={matchScore === null} sticky={isMobile} />
           </div>
           <AnalysisStream
             resume={resume}

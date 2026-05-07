@@ -22,8 +22,19 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Resume ↔ JD Analyzer",
-  description: "Analyze your resume against job descriptions with AI-powered insights",
+  title: "Resume × JD Analyzer",
+  description:
+    "Find what's missing in your resume before the recruiter does. Free AI-powered match score, keyword gaps, bullet rewrites, and cover letter.",
+  openGraph: {
+    title: "Resume × JD Analyzer",
+    description: "Find what's missing before the recruiter does.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Resume × JD Analyzer",
+    description: "Find what's missing before the recruiter does.",
+  },
 };
 
 export default function RootLayout({

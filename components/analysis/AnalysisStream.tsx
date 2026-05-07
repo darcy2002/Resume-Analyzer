@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, AlertCircle, ChevronDown } from "lucide-react";
 import { tryParsePartial } from "@/lib/partial-json";
@@ -69,6 +69,93 @@ export default function AnalysisStream({
   const scoreAnimatedRef = useRef(false);
   const onScoreReadyRef = useRef(onScoreReady);
   onScoreReadyRef.current = onScoreReady;
+  const controllerRef = useRef<AbortController | null>(null);
+
+  const runFetch = useCallback(async () => {
+    if (controllerRef.current) controllerRef.current.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
+    setStatus("loading");
+    setError(null);
+    setPartial(null);
+    scoreAnimatedRef.current = false;
+
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resume, jd }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        if (res.status === 429) {
+          setError("Too many requests. Try again in an hour.");
+        } else if (res.status === 503) {
+          setError("AI is busy. Retrying in a moment…");
+        } else {
+          setError(data.error ?? "Analysis failed. Click to retry.");
+        }
+        setStatus("error");
+        return;
+      }
+
+      setStatus("streaming");
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = "";
+      let jsonBuffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split("\n");
+        sseBuffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+          if (!raw) continue;
+          console.log("[SSE raw]", raw.slice(0, 120));
+          try {
+            const event = JSON.parse(raw) as {
+              chunk?: string;
+              done?: boolean;
+              data?: Analysis;
+              error?: string;
+            };
+            if (event.error) {
+              setError(event.error);
+              setStatus("error");
+              return;
+            }
+            if (event.done && event.data) {
+              setPartial(event.data);
+              setStatus("done");
+              return;
+            }
+            if (event.chunk) {
+              jsonBuffer += event.chunk;
+              const p = tryParsePartial<Partial<Analysis>>(jsonBuffer);
+              if (p) setPartial(p);
+            }
+          } catch {
+            // skip malformed event line
+          }
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+      setError(err instanceof Error ? err.message : "Connection failed");
+      setStatus("error");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Animate score counter when score first arrives
   useEffect(() => {
@@ -95,81 +182,8 @@ export default function AnalysisStream({
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
-
-    const controller = new AbortController();
-
-    async function run() {
-      try {
-        const res = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ resume, jd }),
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({})) as { error?: string };
-          setError(data.error ?? "Analysis failed");
-          setStatus("error");
-          return;
-        }
-
-        setStatus("streaming");
-
-        const reader = res.body!.getReader();
-        const decoder = new TextDecoder();
-        let sseBuffer = "";
-        let jsonBuffer = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          sseBuffer += decoder.decode(value, { stream: true });
-          const lines = sseBuffer.split("\n");
-          sseBuffer = lines.pop() ?? "";
-
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const raw = line.slice(6).trim();
-            if (!raw) continue;
-            console.log("[SSE raw]", raw.slice(0, 120));
-            try {
-              const event = JSON.parse(raw) as {
-                chunk?: string;
-                done?: boolean;
-                data?: Analysis;
-                error?: string;
-              };
-              if (event.error) {
-                setError(event.error);
-                setStatus("error");
-                return;
-              }
-              if (event.done && event.data) {
-                setPartial(event.data);
-                setStatus("done");
-                return;
-              }
-              if (event.chunk) {
-                jsonBuffer += event.chunk;
-                const p = tryParsePartial<Partial<Analysis>>(jsonBuffer);
-                if (p) setPartial(p);
-              }
-            } catch {
-              // skip malformed event line
-            }
-          }
-        }
-      } catch (err) {
-        if ((err as Error).name === "AbortError") return;
-        setError(err instanceof Error ? err.message : "Connection failed");
-        setStatus("error");
-      }
-    }
-
-    run();
-    return () => controller.abort();
+    runFetch();
+    return () => controllerRef.current?.abort();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -199,6 +213,22 @@ export default function AnalysisStream({
         >
           {error ?? "Analysis failed. Please try again."}
         </p>
+        <button
+          onClick={runFetch}
+          style={{
+            background: "none",
+            border: "1px solid var(--accent)",
+            borderRadius: 6,
+            padding: "7px 18px",
+            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontSize: 11,
+            color: "var(--accent)",
+            cursor: "pointer",
+            letterSpacing: "0.06em",
+          }}
+        >
+          Try again →
+        </button>
       </div>
     );
   }

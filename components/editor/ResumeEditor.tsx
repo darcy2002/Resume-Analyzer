@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import type { CSSProperties } from "react";
 import type { ParsedResume, Analysis } from "@/types";
@@ -95,6 +95,17 @@ export default function ResumeEditor({ resume, analysis, onBack, onDone }: Props
   const [loading, setLoading] = useState(true);
   const [changeStates, setChangeStates] = useState<Map<string, ChangeState>>(new Map());
   const [hasExported, setHasExported] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [activeTab, setActiveTab] = useState<"left" | "right">("right");
+
+  useLayoutEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   // Build rewrite lookup from analysis
   const bulletRewriteMap = new Map<string, string>();
@@ -256,6 +267,13 @@ export default function ResumeEditor({ resume, analysis, onBack, onDone }: Props
 
     doc.save("resume_improved.pdf");
     setHasExported(true);
+    setExporting(false);
+  }
+
+  function handleExportPDF() {
+    setExporting(true);
+    // yield to browser paint, then generate
+    setTimeout(exportPDF, 50);
   }
 
   const pendingCount = [...changeStates.values()].filter((s) => s === "pending").length;
@@ -494,20 +512,55 @@ export default function ResumeEditor({ resume, analysis, onBack, onDone }: Props
             </button>
           ) : (
             <button
-              onClick={exportPDF}
-              style={{ background: "var(--accent)", color: "#000", border: "none", borderRadius: 6, padding: "6px 16px", fontFamily: "var(--font-inter), sans-serif", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+              onClick={handleExportPDF}
+              disabled={exporting}
+              style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--accent)", color: "#000", border: "none", borderRadius: 6, padding: "6px 16px", fontFamily: "var(--font-inter), sans-serif", fontWeight: 600, fontSize: 13, cursor: exporting ? "not-allowed" : "pointer", opacity: exporting ? 0.75 : 1 }}
             >
+              {exporting && <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />}
               Export PDF →
             </button>
           )}
         </div>
       </div>
 
-      {/* Two-column diff */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--border)", overflow: "hidden" }}>
-        {renderColumn("left")}
-        {renderColumn("right")}
-      </div>
+      {/* Two-column diff (tabs on mobile) */}
+      {isMobile ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {/* Tab switcher */}
+          <div style={{ display: "flex", borderBottom: "1px solid var(--border)", background: "var(--bg)", flexShrink: 0 }}>
+            {(["left", "right"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  flex: 1,
+                  background: "none",
+                  border: "none",
+                  borderBottom: activeTab === tab ? "2px solid var(--accent)" : "2px solid transparent",
+                  padding: "10px 0",
+                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontSize: 11,
+                  color: activeTab === tab ? "var(--accent)" : "var(--muted)",
+                  cursor: "pointer",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  transition: "color 150ms ease, border-color 150ms ease",
+                }}
+              >
+                {tab === "left" ? "Original" : "Suggested"}
+              </button>
+            ))}
+          </div>
+          <div style={{ flex: 1, overflow: "auto" }}>
+            {renderColumn(activeTab)}
+          </div>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--border)", overflow: "hidden" }}>
+          {renderColumn("left")}
+          {renderColumn("right")}
+        </div>
+      )}
     </motion.div>
   );
 }

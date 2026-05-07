@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, RefreshCw } from "lucide-react";
+import { ChevronLeft, RefreshCw, Loader2 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import type { CSSProperties } from "react";
 import type { ParsedResume, CoverLetter } from "@/types";
@@ -29,6 +29,7 @@ export default function CoverLetterEditor({ resume, jd, onBack }: Props) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [wordCount, setWordCount] = useState(0);
 
   const greetingRef = useRef<HTMLDivElement>(null);
@@ -118,6 +119,12 @@ export default function CoverLetterEditor({ resume, jd, onBack }: Props) {
     txt(closing, 10);
 
     doc.save("cover_letter.pdf");
+    setExporting(false);
+  }
+
+  function handleExportPDF() {
+    setExporting(true);
+    setTimeout(exportPDF, 50);
   }
 
   // ─── Loading ──────────────────────────────────────────────────────────────────
@@ -137,9 +144,9 @@ export default function CoverLetterEditor({ resume, jd, onBack }: Props) {
           <span style={centerLabelStyle}>Cover Letter</span>
           <div style={{ width: 160 }} />
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: "48px 24px" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "clamp(24px, 5vw, 48px) clamp(16px, 4vw, 24px)" }}>
           <div style={{ maxWidth: 720, margin: "0 auto" }}>
-            <div style={{ background: "var(--panel)", border: "1px solid var(--border)", padding: "56px 64px", minHeight: 400 }}>
+            <div style={{ background: "var(--panel)", border: "1px solid var(--border)", padding: "clamp(32px, 6vw, 56px) clamp(24px, 6vw, 64px)", minHeight: 400 }}>
               <SkelBlock height={20} />
               <div style={{ marginBottom: 24 }} />
               <SkelBlock height={18} />
@@ -220,9 +227,11 @@ export default function CoverLetterEditor({ resume, jd, onBack }: Props) {
             Regenerate
           </button>
           <button
-            onClick={exportPDF}
-            style={{ background: "var(--accent)", color: "#000", border: "none", borderRadius: 6, padding: "6px 16px", fontFamily: "var(--font-inter), sans-serif", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+            onClick={handleExportPDF}
+            disabled={exporting}
+            style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--accent)", color: "#000", border: "none", borderRadius: 6, padding: "6px 16px", fontFamily: "var(--font-inter), sans-serif", fontWeight: 600, fontSize: 13, cursor: exporting ? "not-allowed" : "pointer", opacity: exporting ? 0.75 : 1 }}
           >
+            {exporting && <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />}
             Export PDF →
           </button>
         </div>
@@ -251,13 +260,13 @@ export default function CoverLetterEditor({ resume, jd, onBack }: Props) {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "48px 24px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "clamp(24px, 5vw, 48px) clamp(16px, 4vw, 24px)" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <div
             style={{
               background: "var(--panel)",
               border: "1px solid var(--border)",
-              padding: "56px 64px",
+              padding: "clamp(32px, 6vw, 56px) clamp(24px, 6vw, 64px)",
               minHeight: 600,
               position: "relative",
             }}

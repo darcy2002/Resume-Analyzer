@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText, Lock, CheckCircle } from "lucide-react";
 import type { ParsedResume } from "@/types";
+import { useToast } from "@/lib/hooks/useToast";
 
 interface IntakeViewProps {
   onAnalyze: (resume: ParsedResume, jd: string) => void;
@@ -17,6 +18,7 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [jd, setJd] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showToast, ToastComponent } = useToast();
 
   const jdTrimmedLength = jd.trim().length;
   const canAnalyze = parsedResume !== null && jdTrimmedLength >= 50;
@@ -48,10 +50,21 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
         body: formData,
       });
       const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || "Parse failed");
+      if (res.status === 429) {
+        showToast("Too many requests. Try again in an hour.", "error");
+        setUploadState("idle");
+        return;
+      }
+      if (!res.ok || data.error) {
+        showToast("Couldn't read this PDF. Try another file.", "error");
+        setUploadError(data.error || "Parse failed");
+        setUploadState("error");
+        return;
+      }
       setParsedResume(data.resume);
       setUploadState("done");
     } catch (err) {
+      showToast("Couldn't read this PDF. Try another file.", "error");
       setUploadError(err instanceof Error ? err.message : "Upload failed");
       setUploadState("error");
     }
@@ -131,6 +144,8 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
         .jd-textarea::placeholder { color: var(--muted); opacity: 1; }
       `}</style>
 
+      {ToastComponent}
+
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -140,7 +155,7 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
           width: "100%",
           maxWidth: 640,
           margin: "0 auto",
-          padding: "48px 24px",
+          padding: "clamp(24px, 6vw, 48px) clamp(16px, 4vw, 24px)",
           minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
@@ -196,7 +211,7 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
             style={{
               fontFamily: "var(--font-inter), sans-serif",
               fontWeight: 700,
-              fontSize: 44,
+              fontSize: "clamp(32px, 8vw, 44px)",
               letterSpacing: "-1.5px",
               lineHeight: 1.05,
               color: "var(--text)",
@@ -418,6 +433,28 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
             </>
           )}
         </div>
+
+        {/* Parsing status */}
+        <AnimatePresence>
+          {isUploading && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}
+            >
+              <motion.span
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", flexShrink: 0 }}
+              />
+              <span style={{ fontFamily: "var(--font-inter), sans-serif", fontSize: 13, color: "var(--muted)" }}>
+                Parsing resume…
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Step 2: JD + button — slides in after resume parsed */}
         <AnimatePresence>
