@@ -50,6 +50,15 @@ export const AnalysisSchema: z.ZodType<Analysis> = z.object({
   strengths: z.array(z.string().min(1)),
   concerns: z.array(z.string().min(1)),
   recommendedTitle: z.string().nullable().optional().transform((v) => v ?? undefined),
+  atsScore: z.number().min(0).max(100),
+  atsIssues: z.array(
+    z.object({
+      issue: z.string().min(1),
+      severity: z.enum(["high", "medium", "low"]),
+      why: z.string().min(1),
+      fix: z.string().min(1),
+    })
+  ),
 });
 
 export const CoverLetterSchema: z.ZodType<CoverLetter> = z.object({

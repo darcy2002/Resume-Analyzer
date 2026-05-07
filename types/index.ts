@@ -39,6 +39,13 @@ export type Analysis = {
   strengths: string[];
   concerns: string[];
   recommendedTitle?: string;
+  atsScore: number;
+  atsIssues: Array<{
+    issue: string;
+    severity: "high" | "medium" | "low";
+    why: string;
+    fix: string;
+  }>;
 };
 
 export type CoverLetter = {

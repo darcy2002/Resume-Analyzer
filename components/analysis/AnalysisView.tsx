@@ -71,7 +71,35 @@ export default function AnalysisView({
   onCoverLetter,
 }: AnalysisViewProps) {
   const [matchScore, setMatchScore] = useState<number | null>(null);
+  const [atsScore, setAtsScore] = useState<number | null>(null);
+  const [displayAts, setDisplayAts] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (atsScore === null) return;
+    const target = atsScore;
+    const startTime = performance.now();
+    const duration = 1000;
+    let raf = 0;
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayAts(Math.round(target * eased));
+      if (progress < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [atsScore]);
+
+  const atsColor =
+    atsScore === null
+      ? "var(--muted)"
+      : atsScore >= 80
+        ? "var(--match)"
+        : atsScore >= 60
+          ? "var(--suggest)"
+          : "var(--gap)";
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 768px)");
@@ -83,6 +111,10 @@ export default function AnalysisView({
 
   const handleScoreReady = useCallback((score: number) => {
     setMatchScore(score);
+  }, []);
+
+  const handleAtsScoreReady = useCallback((score: number) => {
+    setAtsScore(score);
   }, []);
 
   return (
@@ -175,31 +207,98 @@ export default function AnalysisView({
           </div>
         )}
 
-        {/* Right: score + reset */}
+        {/* Right: scores + reset */}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-            <span
+          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+            {/* MATCH score block */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontSize: 9,
+                  color: "var(--muted)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                  lineHeight: 1,
+                }}
+              >
+                MATCH
+              </span>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+                <span
+                  style={{
+                    fontFamily: "var(--font-inter), sans-serif",
+                    fontSize: 28,
+                    fontWeight: 700,
+                    color: matchScore !== null ? "var(--accent)" : "var(--muted)",
+                    lineHeight: 1,
+                    transition: "color 300ms ease",
+                  }}
+                >
+                  {matchScore !== null ? matchScore : "—"}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-inter), sans-serif",
+                    fontSize: 14,
+                    fontWeight: 400,
+                    color: "var(--muted)",
+                  }}
+                >
+                  /100
+                </span>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
-                fontSize: 22,
-                fontWeight: 700,
-                color: matchScore !== null ? "var(--accent)" : "var(--muted)",
-                lineHeight: 1,
-                transition: "color 300ms ease",
+                width: 1,
+                height: 28,
+                background: "var(--border)",
+                margin: "0 12px",
               }}
-            >
-              {matchScore !== null ? matchScore : "—"}
-            </span>
-            <span
-              style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
-                fontSize: 11,
-                color: "var(--muted)",
-                letterSpacing: "0.06em",
-              }}
-            >
-              / 100
-            </span>
+            />
+
+            {/* ATS score block */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontSize: 9,
+                  color: "var(--muted)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                  lineHeight: 1,
+                }}
+              >
+                ATS
+              </span>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+                <span
+                  style={{
+                    fontFamily: "var(--font-inter), sans-serif",
+                    fontSize: 28,
+                    fontWeight: 700,
+                    color: atsColor,
+                    lineHeight: 1,
+                    transition: "color 300ms ease",
+                  }}
+                >
+                  {atsScore !== null ? displayAts : "—"}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-inter), sans-serif",
+                    fontSize: 14,
+                    fontWeight: 400,
+                    color: "var(--muted)",
+                  }}
+                >
+                  /100
+                </span>
+              </div>
+            </div>
           </div>
 
           <button
@@ -425,6 +524,7 @@ export default function AnalysisView({
             resume={resume}
             jd={jd}
             onScoreReady={handleScoreReady}
+            onAtsScoreReady={handleAtsScoreReady}
             onGenerateResume={(a) => onEditResume(a)}
             onCoverLetter={onCoverLetter}
           />

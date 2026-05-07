@@ -70,10 +70,44 @@ Analyze the candidate's fit and return JSON with this exact structure:
   ],
   "strengths": ["3 key strengths max"],
   "concerns": ["2 concerns max - be honest, not nice"],
-  "recommendedTitle": "string (optional, if current title undersells them)"
+  "recommendedTitle": "string (optional, if current title undersells them)",
+  "atsScore": 78,
+  "atsIssues": [
+    {
+      "issue": "Two-column layout detected",
+      "severity": "high",
+      "why": "Most ATS systems read left-to-right and skip content in right columns entirely",
+      "fix": "Convert to single-column. Move all right-column content below the left-column content."
+    }
+  ]
 }
 
-Be specific and data-driven. Focus on missingKeywords as the most valuable feedback.`;
+Be specific and data-driven. Focus on missingKeywords as the most valuable feedback.
+
+ATS COMPATIBILITY ANALYSIS:
+Also analyze the resume for ATS (Applicant Tracking System) compatibility issues. Check for:
+
+1. Formatting issues: tables, columns, text boxes, headers/footers, images, graphics — ATS cannot parse these
+2. Section naming: non-standard headers like 'My Journey' instead of 'Experience', 'Brain Trust' instead of 'Skills'
+3. Contact info: missing email, phone, or location
+4. Date formatting: inconsistent formats (mix of 2024 and January 2024)
+5. Bullet structure: long paragraphs instead of bullets
+6. Special characters: fancy bullets (→ ◆ ★) instead of standard (•)
+7. Length: significantly over 2 pages for under 10 years experience
+8. File issues: if resume appears to have been parsed from a designed template with columns
+
+For atsScore:
+- Start at 100, deduct points per issue:
+  - High severity issue: -15 to -20 points
+  - Medium severity: -8 to -10 points
+  - Low severity: -3 to -5 points
+- Minimum score: 10
+- Most text-based resumes with standard formatting: 75-95
+- Heavily designed resumes: 30-60
+
+Be specific in the fix field — not 'fix formatting' but 'Replace the two-column layout with a single-column format. Move skills section below experience instead of beside it.'
+
+Return atsScore and atsIssues in the JSON response. If no issues, return an empty atsIssues array and a high atsScore.`;
 }
 
 export function REGENERATE_PROMPT(

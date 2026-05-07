@@ -10,9 +10,22 @@ interface AnalysisStreamProps {
   resume: ParsedResume;
   jd: string;
   onScoreReady: (score: number) => void;
+  onAtsScoreReady: (score: number) => void;
   onGenerateResume: (analysis: Analysis) => void;
   onCoverLetter: () => void;
 }
+
+function atsColor(score: number): string {
+  if (score >= 80) return "var(--match)";
+  if (score >= 60) return "var(--suggest)";
+  return "var(--gap)";
+}
+
+const SEVERITY_COLORS: Record<"high" | "medium" | "low", string> = {
+  high: "var(--gap)",
+  medium: "var(--suggest)",
+  low: "var(--muted)",
+};
 
 const IMPACT_COLORS: Record<"high" | "medium" | "low", string> = {
   high: "var(--gap)",
@@ -57,6 +70,7 @@ export default function AnalysisStream({
   resume,
   jd,
   onScoreReady,
+  onAtsScoreReady,
   onGenerateResume,
   onCoverLetter,
 }: AnalysisStreamProps) {
@@ -67,8 +81,11 @@ export default function AnalysisStream({
 
   const hasFetched = useRef(false);
   const scoreAnimatedRef = useRef(false);
+  const atsScoreReportedRef = useRef(false);
   const onScoreReadyRef = useRef(onScoreReady);
   onScoreReadyRef.current = onScoreReady;
+  const onAtsScoreReadyRef = useRef(onAtsScoreReady);
+  onAtsScoreReadyRef.current = onAtsScoreReady;
   const controllerRef = useRef<AbortController | null>(null);
 
   const runFetch = useCallback(async () => {
@@ -80,6 +97,7 @@ export default function AnalysisStream({
     setError(null);
     setPartial(null);
     scoreAnimatedRef.current = false;
+    atsScoreReportedRef.current = false;
 
     try {
       const res = await fetch("/api/analyze", {
@@ -177,6 +195,14 @@ export default function AnalysisStream({
     requestAnimationFrame(tick);
   }, [partial?.matchScore]);
 
+  // Report ATS score once it arrives
+  useEffect(() => {
+    const ats = partial?.atsScore;
+    if (ats === undefined || atsScoreReportedRef.current) return;
+    atsScoreReportedRef.current = true;
+    onAtsScoreReadyRef.current(ats);
+  }, [partial?.atsScore]);
+
   // SSE connection — runs once on mount
   useEffect(() => {
     if (hasFetched.current) return;
@@ -234,6 +260,7 @@ export default function AnalysisStream({
 
   const hasScore = partial?.matchScore !== undefined;
   const hasKeywords = partial?.matchedKeywords !== undefined;
+  const hasAts = partial?.atsScore !== undefined;
   const hasMissing = (partial?.missingKeywords?.length ?? 0) > 0;
   const hasBullets = (partial?.bulletRewrites?.length ?? 0) > 0;
   const hasStrengths = (partial?.strengths?.length ?? 0) > 0;
@@ -377,6 +404,183 @@ export default function AnalysisStream({
               <Skeleton width="100%" />
               <Skeleton width="100%" />
             </div>
+          )}
+        </div>
+
+        {/* ATS compatibility */}
+        <div style={{ marginBottom: 28 }}>
+          {hasAts ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.35 }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                  marginBottom: 12,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--font-jetbrains-mono), monospace",
+                    fontSize: 11,
+                    color: atsColor(partial!.atsScore!),
+                    textTransform: "uppercase",
+                    letterSpacing: "0.12em",
+                  }}
+                >
+                  ATS Compatibility
+                </span>
+                <span style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-jetbrains-mono), monospace",
+                      fontWeight: 700,
+                      fontSize: 20,
+                      color: atsColor(partial!.atsScore!),
+                      lineHeight: 1,
+                    }}
+                  >
+                    {partial!.atsScore}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-jetbrains-mono), monospace",
+                      fontSize: 11,
+                      color: "var(--muted)",
+                    }}
+                  >
+                    /100
+                  </span>
+                </span>
+              </div>
+
+              {(partial?.atsIssues?.length ?? 0) === 0 ? (
+                <p
+                  style={{
+                    fontFamily: "var(--font-inter), sans-serif",
+                    fontSize: 13,
+                    color: "var(--match)",
+                    margin: 0,
+                  }}
+                >
+                  ✓ No ATS issues detected
+                </p>
+              ) : (
+                (partial?.atsIssues ?? []).map((iss, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      background: "var(--elevated)",
+                      borderLeft: `2px solid ${SEVERITY_COLORS[iss.severity]}`,
+                      padding: "12px 14px",
+                      marginBottom: 8,
+                      borderRadius: 4,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        gap: 8,
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontFamily: "var(--font-inter), sans-serif",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          color: "var(--text)",
+                          margin: 0,
+                          lineHeight: 1.5,
+                          flex: 1,
+                        }}
+                      >
+                        {iss.issue}
+                      </p>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-jetbrains-mono), monospace",
+                          fontSize: 9,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                          color: SEVERITY_COLORS[iss.severity],
+                          border: `1px solid ${SEVERITY_COLORS[iss.severity]}`,
+                          borderRadius: 3,
+                          padding: "2px 6px",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {iss.severity}
+                      </span>
+                    </div>
+
+                    <p
+                      style={{
+                        fontFamily: "var(--font-jetbrains-mono), monospace",
+                        fontSize: 9,
+                        color: "var(--muted)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        margin: "8px 0 4px",
+                      }}
+                    >
+                      Why this matters
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: "var(--font-inter), sans-serif",
+                        fontSize: 12,
+                        color: "var(--text-dim)",
+                        fontStyle: "italic",
+                        margin: 0,
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      {iss.why}
+                    </p>
+
+                    <p
+                      style={{
+                        fontFamily: "var(--font-jetbrains-mono), monospace",
+                        fontSize: 9,
+                        color: "var(--accent)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        margin: "8px 0 4px",
+                      }}
+                    >
+                      How to fix
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: "var(--font-inter), sans-serif",
+                        fontSize: 12,
+                        color: "var(--text)",
+                        background: "var(--accent-dim)",
+                        borderLeft: "2px solid var(--accent)",
+                        padding: "8px 10px",
+                        margin: 0,
+                        lineHeight: 1.6,
+                        borderRadius: 3,
+                      }}
+                    >
+                      {iss.fix}
+                    </p>
+                  </div>
+                ))
+              )}
+            </motion.div>
+          ) : (
+            <>
+              <SectionHeader label="ATS Compatibility" color="var(--muted)" />
+              <Skeleton width="100%" />
+              <Skeleton width="90%" />
+            </>
           )}
         </div>
 
