@@ -242,12 +242,134 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
             color: "var(--muted)",
             maxWidth: 480,
             lineHeight: 1.6,
-            margin: "0 0 48px",
+            margin: 0,
           }}
         >
           Drop your resume and a job description. Get a match score, keyword
           gaps, rewritten bullets, and a cover letter — in 30 seconds.
         </p>
+
+        {/* Before/after bullet showcase */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
+          style={{ marginTop: 40, marginBottom: 40 }}
+        >
+          <div
+            style={{
+              maxWidth: 560,
+              margin: "0 auto",
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+              padding: 24,
+            }}
+          >
+            {/* Label row */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontSize: 10,
+                  color: "var(--muted)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                }}
+              >
+                Before
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontSize: 10,
+                  color: "var(--accent)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                }}
+              >
+                After
+              </span>
+            </div>
+
+            {/* Before block */}
+            <div style={{ padding: "12px 0" }}>
+              <p
+                style={{
+                  fontFamily: "var(--font-inter), sans-serif",
+                  fontSize: 13,
+                  color: "var(--muted)",
+                  textDecoration: "line-through",
+                  margin: 0,
+                  lineHeight: 1.6,
+                }}
+              >
+                Worked on backend systems using Node.js and PostgreSQL,
+                contributing to internal tooling.
+              </p>
+            </div>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: "var(--border)", margin: "4px 0" }} />
+
+            {/* After block */}
+            <div
+              style={{
+                background: "var(--accent-dim)",
+                borderLeft: "2px solid var(--accent)",
+                padding: "12px 14px",
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: "var(--font-inter), sans-serif",
+                  fontSize: 13,
+                  color: "var(--text)",
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}
+              >
+                Engineered data-intensive backend systems in Node.js and
+                PostgreSQL, managing workflows across 2000+ institutional nodes
+                with a 100+ table relational schema — reducing manual overhead
+                by 53%.
+              </p>
+            </div>
+
+            {/* Rewritten label */}
+            <p
+              style={{
+                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontSize: 10,
+                color: "var(--muted)",
+                fontStyle: "italic",
+                textAlign: "right",
+                margin: "10px 0 0",
+              }}
+            >
+              rewritten for impact
+            </p>
+
+            {/* Bottom caption */}
+            <p
+              style={{
+                fontFamily: "var(--font-inter), sans-serif",
+                fontSize: 13,
+                color: "var(--muted)",
+                textAlign: "center",
+                margin: "16px 0 0",
+              }}
+            >
+              ↑ Your resume gets this treatment, for every bullet.
+            </p>
+          </div>
+        </motion.div>
 
         {/* Hidden file input */}
         <input
