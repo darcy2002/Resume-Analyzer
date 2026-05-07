@@ -153,9 +153,9 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
         transition={{ duration: 0.4, ease: "easeOut" }}
         style={{
           width: "100%",
-          maxWidth: 640,
+          maxWidth: 680,
           margin: "0 auto",
-          padding: "clamp(24px, 6vw, 48px) clamp(16px, 4vw, 24px)",
+          padding: "clamp(24px, 6vw, 48px) 24px",
           minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
@@ -255,7 +255,7 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
-          style={{ marginTop: 40, marginBottom: 40, position: "relative", zIndex: 1 }}
+          style={{ marginTop: 40, marginBottom: 40, position: "relative", zIndex: 1, paddingLeft: 24, paddingRight: 24 }}
         >
           <div
             style={{
