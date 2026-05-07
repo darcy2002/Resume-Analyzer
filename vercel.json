@@ -11,6 +11,9 @@
     },
     "app/api/cover-letter/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/rescore/route.ts": {
+      "maxDuration": 30
     }
   }
 }
