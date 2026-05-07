@@ -50,17 +50,26 @@ export async function POST(request: NextRequest) {
           }
 
           try {
-            const parsed = JSON.parse(buffer);
-            await AnalysisSchema.parseAsync(parsed);
+            // Strip markdown fences — Gemini sometimes wraps JSON in ```json...```
+            const jsonStart = buffer.indexOf("{");
+            const jsonEnd = buffer.lastIndexOf("}");
+            const jsonStr =
+              jsonStart !== -1 && jsonEnd !== -1
+                ? buffer.slice(jsonStart, jsonEnd + 1)
+                : buffer;
+            const parsed = JSON.parse(jsonStr);
+            const validated = await AnalysisSchema.parseAsync(parsed);
             controller.enqueue(
               encoder.encode(
-                `data: ${JSON.stringify({ done: true, data: parsed })}\n\n`
+                `data: ${JSON.stringify({ done: true, data: validated })}\n\n`
               )
             );
           } catch (err) {
+            const detail = err instanceof Error ? err.message : "Parse failed";
+            console.error("[analyze] final parse error:", detail, "\nbuffer head:", buffer.slice(0, 200));
             controller.enqueue(
               encoder.encode(
-                `data: ${JSON.stringify({ error: "Invalid response format" })}\n\n`
+                `data: ${JSON.stringify({ error: `Invalid response format: ${detail}` })}\n\n`
               )
             );
           }
