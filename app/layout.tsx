@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
+import DotGrid from "@/components/ui/DotGrid";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -48,7 +49,7 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable}`}
     >
       <body className="min-h-screen flex flex-col">
-        <div className="dot-grid-bg" aria-hidden="true" />
+        <DotGrid />
         {children}
       </body>
     </html>
