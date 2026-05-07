@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { ParsedResume, Analysis } from "@/types";
 import AnalysisStream from "./AnalysisStream";
 
 interface AnalysisViewProps {
   resume: ParsedResume;
   jd: string;
+  updatedBullets?: string[] | null;
   onReset: () => void;
   onEditResume: (analysis: Analysis) => void;
   onCoverLetter: () => void;
@@ -66,14 +67,20 @@ function PanelHeader({ label, showDot, sticky }: { label: string; showDot?: bool
 export default function AnalysisView({
   resume,
   jd,
+  updatedBullets,
   onReset,
   onEditResume,
   onCoverLetter,
 }: AnalysisViewProps) {
   const [matchScore, setMatchScore] = useState<number | null>(null);
+  const [displayMatch, setDisplayMatch] = useState<number | null>(null);
   const [atsScore, setAtsScore] = useState<number | null>(null);
   const [displayAts, setDisplayAts] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [rescoring, setRescoring] = useState(false);
+  const [delta, setDelta] = useState<number | null>(null);
+  const [rescoreSummary, setRescoreSummary] = useState<string | null>(null);
+  const rescoreFiredRef = useRef(false);
 
   useEffect(() => {
     if (atsScore === null) return;
@@ -111,7 +118,52 @@ export default function AnalysisView({
 
   const handleScoreReady = useCallback((score: number) => {
     setMatchScore(score);
+    setDisplayMatch(score);
   }, []);
+
+  // Trigger rescore when returning from editor with accepted bullets
+  useEffect(() => {
+    if (rescoreFiredRef.current) return;
+    if (!updatedBullets || updatedBullets.length === 0) return;
+    if (matchScore === null) return;
+
+    rescoreFiredRef.current = true;
+    const previousScore = matchScore;
+    setRescoring(true);
+
+    fetch("/api/rescore", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ updatedBullets, jd, previousScore }),
+    })
+      .then((res) => res.json())
+      .then((data: { matchScore?: number; delta?: number; summary?: string; error?: string }) => {
+        if (data.error || typeof data.matchScore !== "number") {
+          setRescoring(false);
+          return;
+        }
+        const newScore = data.matchScore;
+        setDelta(data.delta ?? newScore - previousScore);
+        setRescoreSummary(data.summary ?? null);
+        setMatchScore(newScore);
+
+        const startTime = performance.now();
+        const duration = 1200;
+        let raf = 0;
+        const tick = (now: number) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const v = previousScore + (newScore - previousScore) * eased;
+          setDisplayMatch(Math.round(v));
+          if (progress < 1) raf = requestAnimationFrame(tick);
+          else setRescoring(false);
+        };
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+      })
+      .catch(() => setRescoring(false));
+  }, [updatedBullets, matchScore, jd]);
 
   const handleAtsScoreReady = useCallback((score: number) => {
     setAtsScore(score);
@@ -211,7 +263,7 @@ export default function AnalysisView({
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
             {/* MATCH score block */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, position: "relative" }}>
               <span
                 style={{
                   fontFamily: "var(--font-jetbrains-mono), monospace",
@@ -225,6 +277,20 @@ export default function AnalysisView({
                 MATCH
               </span>
               <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+                {rescoring && (
+                  <motion.span
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                    style={{
+                      width: 4,
+                      height: 4,
+                      borderRadius: "50%",
+                      background: "var(--accent)",
+                      marginRight: 6,
+                      alignSelf: "center",
+                    }}
+                  />
+                )}
                 <span
                   style={{
                     fontFamily: "var(--font-inter), sans-serif",
@@ -235,7 +301,7 @@ export default function AnalysisView({
                     transition: "color 300ms ease",
                   }}
                 >
-                  {matchScore !== null ? matchScore : "—"}
+                  {displayMatch !== null ? displayMatch : "—"}
                 </span>
                 <span
                   style={{
@@ -248,6 +314,54 @@ export default function AnalysisView({
                   /100
                 </span>
               </div>
+
+              <AnimatePresence>
+                {delta !== null && delta !== 0 && !rescoring && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      right: 0,
+                      marginTop: 6,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      background: delta > 0 ? "var(--accent-dim)" : "rgba(255,77,77,0.12)",
+                      border: `1px solid ${delta > 0 ? "var(--match)" : "var(--gap)"}`,
+                      borderRadius: 4,
+                      padding: "3px 8px",
+                      whiteSpace: "nowrap",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: "var(--font-jetbrains-mono), monospace",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: delta > 0 ? "var(--match)" : "var(--gap)",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      {delta > 0 ? "↑" : "↓"} {delta > 0 ? "+" : ""}{delta}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-jetbrains-mono), monospace",
+                        fontSize: 10,
+                        color: "var(--muted)",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      {rescoreSummary ?? "from bullet rewrites"}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Divider */}

@@ -152,6 +152,30 @@ Return JSON:
 CRITICAL: In the closing field, use the candidate's actual full name exactly as it appears in the resume. Never use a placeholder like "[Name]" or any hardcoded name — substitute the real name from the resume data above.`;
 }
 
+export function RESCORE_PROMPT(
+  updatedBullets: string[],
+  jd: string,
+  previousScore: number
+): string {
+  return `You previously scored a candidate's resume against this job description at ${previousScore}/100.
+The candidate has now accepted suggested bullet rewrites. Re-score against ONLY the updated bullets and the JD.
+
+Updated resume bullets (after accepted rewrites):
+${updatedBullets.map((b) => `• ${b}`).join("\n")}
+
+Job Description:
+${jd}
+
+Return JSON ONLY (no markdown, no commentary):
+{
+  "matchScore": number (0-100, calibrated the same way: 90+ rare, most 50-75),
+  "delta": number (newScore - ${previousScore}, can be negative),
+  "summary": "string (max 8 words, e.g. '3 bullets strengthened — keywords added')"
+}
+
+Be honest — if the rewrites don't materially improve fit, the delta may be small or zero. Calibrate the new score against the same standards as the original.`;
+}
+
 function formatResumeForAnalysis(resume: ParsedResume): string {
   const parts: string[] = [];
 

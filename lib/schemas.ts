@@ -61,6 +61,12 @@ export const AnalysisSchema: z.ZodType<Analysis> = z.object({
   ),
 });
 
+export const RescoreSchema = z.object({
+  matchScore: z.number().min(0).max(100),
+  delta: z.number(),
+  summary: z.string().min(1),
+});
+
 export const CoverLetterSchema: z.ZodType<CoverLetter> = z.object({
   greeting: z.string().min(1),
   body: z.array(z.string().min(1)),

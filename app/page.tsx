@@ -15,10 +15,13 @@ export default function Home() {
   const [resume, setResume] = useState<ParsedResume | null>(null);
   const [jd, setJd] = useState<string>("");
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [acceptedBullets, setAcceptedBullets] = useState<string[] | null>(null);
 
   const handleAnalyze = useCallback((parsed: ParsedResume, jobDesc: string) => {
     setResume(parsed);
     setJd(jobDesc);
+    setAnalysis(null);
+    setAcceptedBullets(null);
     setPhase("analyzing");
   }, []);
 
@@ -27,6 +30,7 @@ export default function Home() {
     setResume(null);
     setJd("");
     setAnalysis(null);
+    setAcceptedBullets(null);
   }, []);
 
   const handleEditResume = useCallback((a: Analysis) => {
@@ -35,7 +39,16 @@ export default function Home() {
   }, []);
 
   const handleCoverLetter = useCallback(() => setPhase("coverLetter"), []);
-  const handleBackToAnalysis = useCallback(() => setPhase("analyzing"), []);
+
+  const handleBackFromEditor = useCallback((acceptedResume: ParsedResume) => {
+    const flat = acceptedResume.experience.flatMap((e) => e.bullets);
+    setAcceptedBullets(flat);
+    setPhase("analyzing");
+  }, []);
+
+  const handleBackFromCoverLetter = useCallback(() => {
+    setPhase("analyzing");
+  }, []);
 
   const handleEditorDone = useCallback((acceptedResume: ParsedResume) => {
     setResume(acceptedResume);
@@ -51,7 +64,7 @@ export default function Home() {
           key="editing"
           resume={resume}
           analysis={analysis}
-          onBack={handleBackToAnalysis}
+          onBack={handleBackFromEditor}
           onDone={handleEditorDone}
         />
       ) : phase === "coverLetter" ? (
@@ -59,13 +72,14 @@ export default function Home() {
           key="coverLetter"
           resume={resume}
           jd={jd}
-          onBack={handleBackToAnalysis}
+          onBack={handleBackFromCoverLetter}
         />
       ) : (
         <AnalysisView
           key="analysis"
           resume={resume}
           jd={jd}
+          updatedBullets={acceptedBullets}
           onReset={handleReset}
           onEditResume={handleEditResume}
           onCoverLetter={handleCoverLetter}

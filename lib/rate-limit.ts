@@ -26,6 +26,11 @@ export const coverLetterLimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(5, "1 h"),
 });
 
+export const rescoreLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(15, "1 h"),
+});
+
 export async function checkRateLimit(
   limiter: Ratelimit,
   ip: string

@@ -10,7 +10,7 @@ import type { ParsedResume, Analysis } from "@/types";
 interface Props {
   resume: ParsedResume;
   analysis: Analysis;
-  onBack: () => void;
+  onBack: (acceptedResume: ParsedResume) => void;
   onDone: (acceptedResume: ParsedResume) => void;
 }
 
@@ -288,7 +288,7 @@ export default function ResumeEditor({ resume, analysis, onBack, onDone }: Props
         style={{ width: "100%", height: "100vh", display: "flex", flexDirection: "column", background: "var(--bg)" }}
       >
         <div style={topBarStyle}>
-          <button onClick={onBack} style={backBtnStyle}>
+          <button onClick={() => onBack(buildAcceptedResume())} style={backBtnStyle}>
             <ChevronLeft size={16} />
             Back to analysis
           </button>
@@ -332,7 +332,7 @@ export default function ResumeEditor({ resume, analysis, onBack, onDone }: Props
         <p style={{ fontFamily: "var(--font-inter), sans-serif", fontSize: 15, color: "var(--gap)", margin: 0 }}>
           {loadError}
         </p>
-        <button onClick={onBack} style={{ background: "none", border: "1px solid var(--border-strong)", borderRadius: 6, padding: "8px 20px", fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: 11, color: "var(--muted)", cursor: "pointer" }}>
+        <button onClick={() => onBack(buildAcceptedResume())} style={{ background: "none", border: "1px solid var(--border-strong)", borderRadius: 6, padding: "8px 20px", fontFamily: "var(--font-jetbrains-mono), monospace", fontSize: 11, color: "var(--muted)", cursor: "pointer" }}>
           ← Back to analysis
         </button>
       </motion.div>
@@ -485,7 +485,7 @@ export default function ResumeEditor({ resume, analysis, onBack, onDone }: Props
     >
       {/* Top bar */}
       <div style={topBarStyle}>
-        <button onClick={onBack} style={backBtnStyle}>
+        <button onClick={() => onBack(buildAcceptedResume())} style={backBtnStyle}>
           <ChevronLeft size={16} />
           Back to analysis
         </button>
