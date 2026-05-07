@@ -162,6 +162,7 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
           justifyContent: "center",
           boxSizing: "border-box",
           position: "relative",
+          zIndex: 1,
         }}
       >
         {/* Logo + label */}
@@ -254,7 +255,7 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
-          style={{ marginTop: 40, marginBottom: 40 }}
+          style={{ marginTop: 40, marginBottom: 40, position: "relative", zIndex: 1 }}
         >
           <div
             style={{
@@ -263,6 +264,8 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
               border: "1px solid var(--border)",
               background: "var(--surface)",
               padding: 24,
+              position: "relative",
+              zIndex: 1,
             }}
           >
             {/* Label row */}
@@ -316,7 +319,7 @@ export default function IntakeView({ onAnalyze }: IntakeViewProps) {
             </div>
 
             {/* Divider */}
-            <div style={{ height: 1, background: "var(--border)", margin: "4px 0" }} />
+            <div style={{ height: 1, background: "var(--border)", margin: "8px 0" }} />
 
             {/* After block */}
             <div
