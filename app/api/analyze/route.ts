@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
             );
           } catch (err) {
             const detail = err instanceof Error ? err.message : "Parse failed";
-            console.error("[analyze] final parse error:", detail, "\nbuffer head:", buffer.slice(0, 200));
+            console.error("[analyze] final parse error:", detail);
             controller.enqueue(
               encoder.encode(
                 `data: ${JSON.stringify({ error: `Invalid response format: ${detail}` })}\n\n`

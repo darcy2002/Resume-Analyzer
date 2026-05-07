@@ -121,7 +121,6 @@ export default function AnalysisStream({
           if (!line.startsWith("data: ")) continue;
           const raw = line.slice(6).trim();
           if (!raw) continue;
-          console.log("[SSE raw]", raw.slice(0, 120));
           try {
             const event = JSON.parse(raw) as {
               chunk?: string;
@@ -608,6 +607,7 @@ export default function AnalysisStream({
       >
         <button
           onClick={() => partial && onGenerateResume(partial as Analysis)}
+          disabled={status !== "done"}
           style={{
             width: "100%",
             background: "var(--accent)",
@@ -618,16 +618,19 @@ export default function AnalysisStream({
             fontFamily: "var(--font-inter), sans-serif",
             fontWeight: 600,
             fontSize: 14,
-            cursor: "pointer",
+            cursor: status !== "done" ? "not-allowed" : "pointer",
+            opacity: status !== "done" ? 0.5 : 1,
+            pointerEvents: status !== "done" ? "none" : "auto",
             transition: "opacity 150ms ease",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          onMouseEnter={(e) => { if (status === "done") e.currentTarget.style.opacity = "0.88"; }}
+          onMouseLeave={(e) => { if (status === "done") e.currentTarget.style.opacity = "1"; }}
         >
           Generate improved resume →
         </button>
         <button
           onClick={onCoverLetter}
+          disabled={status !== "done"}
           style={{
             width: "100%",
             background: "none",
@@ -638,11 +641,13 @@ export default function AnalysisStream({
             fontFamily: "var(--font-inter), sans-serif",
             fontWeight: 600,
             fontSize: 14,
-            cursor: "pointer",
+            cursor: status !== "done" ? "not-allowed" : "pointer",
+            opacity: status !== "done" ? 0.5 : 1,
+            pointerEvents: status !== "done" ? "none" : "auto",
             transition: "opacity 150ms ease",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.75")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          onMouseEnter={(e) => { if (status === "done") e.currentTarget.style.opacity = "0.75"; }}
+          onMouseLeave={(e) => { if (status === "done") e.currentTarget.style.opacity = "1"; }}
         >
           Write cover letter →
         </button>
