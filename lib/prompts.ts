@@ -129,11 +129,27 @@ Return the complete updated resume as JSON with the same structure as the origin
 Apply ONLY the suggested changes. Do not add experience or skills that weren't there.`;
 }
 
-export function COVER_LETTER_PROMPT(resume: ParsedResume, jd: string): string {
+export type CoverLetterTone = "formal" | "confident" | "conversational";
+
+const TONE_INSTRUCTIONS: Record<CoverLetterTone, string> = {
+  formal:
+    "Professional and traditional. No contractions. Precise language. Measured third-person references where appropriate (e.g. 'The candidate brings...' for intro context). Never casual.",
+  confident:
+    "First-person, direct, strong action verbs. No hedging language — never 'I think', 'I believe', 'I feel'. Lead with impact. Every sentence earns its place.",
+  conversational:
+    "Warm and natural. Contractions allowed (I've, I'm, I'd). Reads like a sharp human wrote it, not a robot or an AI. Short sentences mixed with longer ones. No stiffness.",
+};
+
+export function COVER_LETTER_PROMPT(
+  resume: ParsedResume,
+  jd: string,
+  tone: CoverLetterTone = "confident"
+): string {
   const resumeText = formatResumeForAnalysis(resume);
 
   return `Write a compelling cover letter (3 paragraphs max).
-Tone: confident, specific, no AI-isms ("excited to apply", "passionate about" are BANNED).
+Tone: ${TONE_INSTRUCTIONS[tone]}
+AI-isms BANNED regardless of tone: "excited to apply", "passionate about", "I am writing to", "thrilled", "honored".
 Reference 2 specific things from the JD and 2 specific things from the resume.
 
 Resume:

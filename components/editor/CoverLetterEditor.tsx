@@ -6,6 +6,13 @@ import { ChevronLeft, RefreshCw, Loader2 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import type { CSSProperties } from "react";
 import type { ParsedResume, CoverLetter } from "@/types";
+import type { CoverLetterTone } from "@/lib/prompts";
+
+const TONES: { value: CoverLetterTone; label: string }[] = [
+  { value: "formal", label: "Formal" },
+  { value: "confident", label: "Confident" },
+  { value: "conversational", label: "Conversational" },
+];
 
 interface Props {
   resume: ParsedResume;
@@ -31,6 +38,7 @@ export default function CoverLetterEditor({ resume, jd, onBack }: Props) {
   const [regenerating, setRegenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [wordCount, setWordCount] = useState(0);
+  const [tone, setTone] = useState<CoverLetterTone>("confident");
 
   const greetingRef = useRef<HTMLDivElement>(null);
   const closingRef = useRef<HTMLDivElement>(null);
@@ -49,12 +57,12 @@ export default function CoverLetterEditor({ resume, jd, onBack }: Props) {
     setWordCount(countWords());
   }
 
-  async function fetchCoverLetter() {
+  async function fetchCoverLetter(fetchTone: CoverLetterTone = tone) {
     try {
       const res = await fetch("/api/cover-letter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume, jd }),
+        body: JSON.stringify({ resume, jd, tone: fetchTone }),
       });
       const data = await res.json() as { coverLetter?: CoverLetter; error?: string };
       if (!res.ok || data.error) {
@@ -82,10 +90,16 @@ export default function CoverLetterEditor({ resume, jd, onBack }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coverLetter]);
 
-  const regenerate = useCallback(async () => {
+  const regenerate = useCallback(async (newTone?: CoverLetterTone) => {
     setRegenerating(true);
-    await fetchCoverLetter();
+    await fetchCoverLetter(newTone);
     setRegenerating(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tone]);
+
+  const handleToneChange = useCallback((newTone: CoverLetterTone) => {
+    setTone(newTone);
+    regenerate(newTone);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -205,7 +219,7 @@ export default function CoverLetterEditor({ resume, jd, onBack }: Props) {
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
-            onClick={regenerate}
+            onClick={() => regenerate()}
             disabled={regenerating}
             style={{
               display: "flex",
@@ -262,6 +276,34 @@ export default function CoverLetterEditor({ resume, jd, onBack }: Props) {
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto", padding: "clamp(24px, 5vw, 48px) clamp(16px, 4vw, 24px)" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
+
+          {/* Tone selector */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+            {TONES.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => handleToneChange(value)}
+                disabled={regenerating}
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontSize: 10,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  padding: "6px 12px",
+                  borderRadius: 4,
+                  border: tone === value ? "none" : "1px solid var(--border)",
+                  background: tone === value ? "var(--accent)" : "var(--elevated)",
+                  color: tone === value ? "#000" : "var(--muted)",
+                  cursor: regenerating ? "not-allowed" : "pointer",
+                  opacity: regenerating && tone !== value ? 0.5 : 1,
+                  transition: "background 150ms ease, color 150ms ease, opacity 150ms ease",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           <div
             style={{
               background: "var(--panel)",
@@ -271,6 +313,33 @@ export default function CoverLetterEditor({ resume, jd, onBack }: Props) {
               position: "relative",
             }}
           >
+            {/* Regenerating skeleton overlay */}
+            {regenerating && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "var(--panel)",
+                  padding: "clamp(32px, 6vw, 56px) clamp(24px, 6vw, 64px)",
+                  zIndex: 2,
+                }}
+              >
+                <SkelBlock height={20} />
+                <div style={{ marginBottom: 24 }} />
+                <SkelBlock height={18} />
+                <SkelBlock height={18} />
+                <SkelBlock height={18} />
+                <div style={{ marginBottom: 16 }} />
+                <SkelBlock height={18} />
+                <SkelBlock height={18} />
+                <SkelBlock height={14} />
+                <div style={{ marginBottom: 16 }} />
+                <SkelBlock height={18} />
+              </motion.div>
+            )}
+
             {/* Greeting */}
             <div
               key={`greeting-${coverLetter.greeting.slice(0, 30)}`}

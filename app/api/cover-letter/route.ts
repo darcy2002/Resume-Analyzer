@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { callGemini } from "@/lib/gemini";
 import { checkRateLimit, coverLetterLimit } from "@/lib/rate-limit";
-import { COVER_LETTER_PROMPT } from "@/lib/prompts";
+import { COVER_LETTER_PROMPT, type CoverLetterTone } from "@/lib/prompts";
 import { CoverLetterSchema } from "@/lib/schemas";
 import type { ParsedResume, CoverLetter } from "@/types";
 
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { resume, jd } = body as { resume: ParsedResume; jd: string };
+    const { resume, jd, tone } = body as { resume: ParsedResume; jd: string; tone?: CoverLetterTone };
 
     if (!resume || !jd) {
       return NextResponse.json(
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const prompt = COVER_LETTER_PROMPT(resume, jd);
+    const prompt = COVER_LETTER_PROMPT(resume, jd, tone ?? "confident");
     const result = await callGemini<CoverLetter>(prompt, CoverLetterSchema);
 
     if (result.error) {
