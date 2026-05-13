@@ -13,6 +13,7 @@ type Phase = "intake" | "analyzing" | "editing" | "coverLetter";
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("intake");
   const [resume, setResume] = useState<ParsedResume | null>(null);
+  const [coverLetterResume, setCoverLetterResume] = useState<ParsedResume | null>(null);
   const [jd, setJd] = useState<string>("");
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [acceptedBullets, setAcceptedBullets] = useState<string[] | null>(null);
@@ -28,6 +29,7 @@ export default function Home() {
   const handleReset = useCallback(() => {
     setPhase("intake");
     setResume(null);
+    setCoverLetterResume(null);
     setJd("");
     setAnalysis(null);
     setAcceptedBullets(null);
@@ -51,7 +53,9 @@ export default function Home() {
   }, []);
 
   const handleEditorDone = useCallback((acceptedResume: ParsedResume) => {
-    setResume(acceptedResume);
+    // Don't overwrite the original resume — keep it for re-editing.
+    // Pass accepted version to cover letter separately.
+    setCoverLetterResume(acceptedResume);
     setPhase("coverLetter");
   }, []);
 
@@ -70,7 +74,7 @@ export default function Home() {
       ) : phase === "coverLetter" ? (
         <CoverLetterEditor
           key="coverLetter"
-          resume={resume}
+          resume={coverLetterResume ?? resume}
           jd={jd}
           onBack={handleBackFromCoverLetter}
         />

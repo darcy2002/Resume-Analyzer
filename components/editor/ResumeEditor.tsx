@@ -89,7 +89,6 @@ function SectionLabel({ label }: { label: string }) {
 }
 
 export default function ResumeEditor({ resume, analysis, onBack, onDone }: Props) {
-  const hasFetched = useRef(false);
   const [improved, setImproved] = useState<ParsedResume | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,8 +113,7 @@ export default function ResumeEditor({ resume, analysis, onBack, onDone }: Props
   }
 
   useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
+    let cancelled = false;
 
     async function load() {
       try {
@@ -125,6 +123,7 @@ export default function ResumeEditor({ resume, analysis, onBack, onDone }: Props
           body: JSON.stringify({ resume, analysis }),
         });
         const data = await res.json() as { resume?: ParsedResume; error?: string };
+        if (cancelled) return;
         if (!res.ok || data.error) {
           setLoadError(data.error ?? "Failed to regenerate resume");
           setLoading(false);
@@ -143,12 +142,14 @@ export default function ResumeEditor({ resume, analysis, onBack, onDone }: Props
         setChangeStates(states);
         setLoading(false);
       } catch (err) {
+        if (cancelled) return;
         setLoadError(err instanceof Error ? err.message : "Network error");
         setLoading(false);
       }
     }
 
     load();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

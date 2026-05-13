@@ -114,19 +114,50 @@ export function REGENERATE_PROMPT(
   resume: ParsedResume,
   analysis: string
 ): string {
-  const resumeText = formatResumeForAnalysis(resume);
-
   return `Rewrite this resume based on analysis feedback.
 CRITICAL: ONLY rewrite what the analysis suggested. Never invent experience or skills.
 
-Original Resume:
-${resumeText}
+Original Resume JSON:
+${JSON.stringify(resume, null, 2)}
 
 Analysis & Suggestions:
 ${analysis}
 
-Return the complete updated resume as JSON with the same structure as the original.
-Apply ONLY the suggested changes. Do not add experience or skills that weren't there.`;
+Return ONLY a raw JSON object — no markdown, no code fences, no wrapper keys like "resume".
+The JSON must match this exact structure:
+{
+  "name": "string (required)",
+  "email": "string (optional)",
+  "phone": "string (optional)",
+  "location": "string (optional)",
+  "summary": "string (optional)",
+  "experience": [
+    {
+      "company": "string",
+      "role": "string",
+      "startDate": "string",
+      "endDate": "string",
+      "bullets": ["string"]
+    }
+  ],
+  "education": [
+    {
+      "institution": "string",
+      "degree": "string",
+      "year": "string"
+    }
+  ],
+  "skills": ["string"],
+  "projects": [
+    {
+      "name": "string",
+      "description": "string",
+      "tech": ["string"]
+    }
+  ]
+}
+
+Apply ONLY the suggested bullet rewrites and improvements. Do not add experience or skills that were not in the original.`;
 }
 
 export type CoverLetterTone = "formal" | "confident" | "conversational";

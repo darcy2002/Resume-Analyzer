@@ -4,15 +4,8 @@ import { callGemini } from "@/lib/gemini";
 import { checkRateLimit, parseResumeLimit } from "@/lib/rate-limit";
 import { PARSE_RESUME_PROMPT } from "@/lib/prompts";
 import { ParsedResumeSchema } from "@/lib/schemas";
+import { getClientIp } from "@/lib/get-ip";
 import type { ParsedResume } from "@/types";
-
-function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);

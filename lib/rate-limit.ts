@@ -8,22 +8,22 @@ const redis = new Redis({
 
 export const parseResumeLimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(5, "1 h"),
+  limiter: Ratelimit.slidingWindow(20, "1 h"),
 });
 
 export const analyzeLimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(10, "1 h"),
+  limiter: Ratelimit.slidingWindow(20, "1 h"),
 });
 
 export const regenerateLimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(5, "1 h"),
+  limiter: Ratelimit.slidingWindow(10, "1 h"),
 });
 
 export const coverLetterLimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(5, "1 h"),
+  limiter: Ratelimit.slidingWindow(10, "1 h"),
 });
 
 export const rescoreLimit = new Ratelimit({
@@ -35,6 +35,10 @@ export async function checkRateLimit(
   limiter: Ratelimit,
   ip: string
 ): Promise<{ success: boolean; remaining: number; reset: number }> {
+  // Skip rate limiting in local development
+  if (process.env.NODE_ENV === "development") {
+    return { success: true, remaining: 999, reset: 0 };
+  }
   const { success, remaining, reset } = await limiter.limit(ip);
   return { success, remaining, reset };
 }

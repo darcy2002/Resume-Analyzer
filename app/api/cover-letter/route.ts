@@ -3,15 +3,8 @@ import { callGemini } from "@/lib/gemini";
 import { checkRateLimit, coverLetterLimit } from "@/lib/rate-limit";
 import { COVER_LETTER_PROMPT, type CoverLetterTone } from "@/lib/prompts";
 import { CoverLetterSchema } from "@/lib/schemas";
+import { getClientIp } from "@/lib/get-ip";
 import type { ParsedResume, CoverLetter } from "@/types";
-
-function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);

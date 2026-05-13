@@ -3,17 +3,10 @@ import { callGemini } from "@/lib/gemini";
 import { checkRateLimit, rescoreLimit } from "@/lib/rate-limit";
 import { RESCORE_PROMPT } from "@/lib/prompts";
 import { RescoreSchema } from "@/lib/schemas";
+import { getClientIp } from "@/lib/get-ip";
 import type { z } from "zod";
 
 type Rescore = z.infer<typeof RescoreSchema>;
-
-function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);

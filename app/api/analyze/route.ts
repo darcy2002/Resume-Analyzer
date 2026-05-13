@@ -3,15 +3,8 @@ import { streamGemini } from "@/lib/gemini";
 import { checkRateLimit, analyzeLimit } from "@/lib/rate-limit";
 import { ANALYZE_PROMPT } from "@/lib/prompts";
 import { AnalysisSchema } from "@/lib/schemas";
+import { getClientIp } from "@/lib/get-ip";
 import type { ParsedResume } from "@/types";
-
-function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
