@@ -79,7 +79,6 @@ export default function AnalysisStream({
   const [error, setError] = useState<string | null>(null);
   const [displayScore, setDisplayScore] = useState(0);
 
-  const hasFetched = useRef(false);
   const scoreAnimatedRef = useRef(false);
   const atsScoreReportedRef = useRef(false);
   const onScoreReadyRef = useRef(onScoreReady);
@@ -205,8 +204,6 @@ export default function AnalysisStream({
 
   // SSE connection — runs once on mount
   useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
     runFetch();
     return () => controllerRef.current?.abort();
   // eslint-disable-next-line react-hooks/exhaustive-deps
